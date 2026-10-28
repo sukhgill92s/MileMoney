@@ -572,6 +572,7 @@ input:focus, select:focus {
 .pill-paid { background: #e7f7f3; color: #1b8979; }
 .pill-partial { background: #fdf3e3; color: #9a6a12; }
 .pill-unpaid { background: #fff0ef; color: #ae3939; }
+.pill-overdue { background: #fde2e2; color: #b91c1c; }
 
 .profit-grid {
   display: grid;
