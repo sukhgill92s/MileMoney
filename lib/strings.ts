@@ -201,6 +201,42 @@ export const STRINGS = {
     checkEmail:
       "Account created! Check your email for a confirmation link (check spam too), then sign in.",
     errorGeneric: "Something went wrong. Please try again.",
+    // Mileage + accountant (v1.4)
+    statusOverdue: "Overdue",
+    tripMiles: "Trip miles",
+    paymentDue: "Payment due",
+    milesUnit: "miles",
+    perMile: "/mile",
+    perMileHeading: "Profit per mile",
+    milesThisMonth: "Miles this month",
+    revenuePerMile: "Revenue per mile",
+    costPerMile: "Cost per mile",
+    profitPerMile: "Profit per mile",
+    perMileNote:
+      "Delivery basis: loads delivered this month and all expenses this month.",
+    accountant: "Accountant",
+    accountantTitle: "Accountant access",
+    accountantSub:
+      "Share read-only records with an accountant who already has a MileMoney account.",
+    accountantInvite: "Invite accountant",
+    accountantInviteNote:
+      "The accountant must create an account and share their account UUID.",
+    accountantUuidLabel: "Accountant's account UUID",
+    accountantUuidPlaceholder: "e.g. 8f2c1a9e-4b7d-11ee-8b0c-42ac12000534",
+    accountantGrant: "Grant read-only access",
+    accountantGranted: "Read-only access granted.",
+    accountantPermissions: "Access permissions",
+    accountantNoGrants: "No accountant access granted.",
+    accountantRevoke: "Revoke",
+    accountantUuidError:
+      "Ask your accountant for their MileMoney account UUID; email lookup is intentionally not exposed.",
+    accountantSelf: "You cannot grant access to your own account.",
+    accountantLoadError: "Could not load accountant access.",
+    accountantSaveError: "Could not save accountant access.",
+    accountantReceiptNote: "Receipt photos stay private and are not shared.",
+    accountantViewNote:
+      "The accountant-side viewing screen is a later step; grants and read-only permissions are included in this version.",
+    invalidMiles: "Enter miles of zero or more.",
   },
   fr: {
     // App nav + header
@@ -404,6 +440,43 @@ export const STRINGS = {
     checkEmail:
       "Compte créé ! Vérifiez votre courriel pour un lien de confirmation (vérifiez aussi les indésirables), puis connectez-vous.",
     errorGeneric: "Une erreur est survenue. Veuillez réessayer.",
+    // Kilométrage + comptable (v1.4)
+    statusOverdue: "En retard",
+    tripMiles: "Miles du voyage",
+    paymentDue: "Échéance du paiement",
+    milesUnit: "milles",
+    perMile: "/mille",
+    perMileHeading: "Profit par mille",
+    milesThisMonth: "Milles ce mois-ci",
+    revenuePerMile: "Revenu par mille",
+    costPerMile: "Coût par mille",
+    profitPerMile: "Profit par mille",
+    perMileNote:
+      "Base de livraison : chargements livrés ce mois-ci et toutes les dépenses ce mois-ci.",
+    accountant: "Comptable",
+    accountantTitle: "Accès comptable",
+    accountantSub:
+      "Partagez des dossiers en lecture seule avec un comptable qui possède déjà un compte MileMoney.",
+    accountantInvite: "Inviter un comptable",
+    accountantInviteNote:
+      "Le comptable doit créer un compte et partager son UUID de compte.",
+    accountantUuidLabel: "UUID du compte du comptable",
+    accountantUuidPlaceholder: "p. ex. 8f2c1a9e-4b7d-11ee-8b0c-42ac12000534",
+    accountantGrant: "Accorder un accès en lecture seule",
+    accountantGranted: "Accès en lecture seule accordé.",
+    accountantPermissions: "Autorisations d'accès",
+    accountantNoGrants: "Aucun accès comptable accordé.",
+    accountantRevoke: "Révoquer",
+    accountantUuidError:
+      "Demandez à votre comptable son UUID de compte MileMoney; la recherche par courriel n'est volontairement pas exposée.",
+    accountantSelf: "Vous ne pouvez pas vous accorder l'accès à votre propre compte.",
+    accountantLoadError: "Impossible de charger l'accès comptable.",
+    accountantSaveError: "Impossible d'enregistrer l'accès comptable.",
+    accountantReceiptNote:
+      "Les photos de reçus restent privées et ne sont pas partagées.",
+    accountantViewNote:
+      "L'écran de consultation côté comptable viendra plus tard; les autorisations et l'accès en lecture seule sont inclus dans cette version.",
+    invalidMiles: "Entrez un nombre de milles de zéro ou plus.",
   },
 } satisfies Record<Locale, Record<string, string>>;
 

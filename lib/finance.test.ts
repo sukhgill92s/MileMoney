@@ -9,6 +9,7 @@ import {
   asCurrency,
   fromMinor,
   loadStatus,
+  profitPerMile,
   money,
   monthOf,
   monthSummary,
@@ -173,4 +174,72 @@ test("monthOf slices YYYY-MM", () => {
 test("money formats per currency", () => {
   assert.ok(money(110000, "CAD", "en-CA").includes("1,100.00"));
   assert.ok(money(50000, "USD", "en-CA").includes("500.00"));
+});
+
+test("loadStatus: overdue beats partial/unpaid, paid beats overdue", () => {
+  const today = "2026-10-28";
+  const pastDue = load({ due_on: "2026-10-20" });
+  assert.equal(loadStatus(pastDue, [], today), "overdue");
+  assert.equal(
+    loadStatus(pastDue, [payment({ amount_minor: 50000 })], today),
+    "overdue"
+  );
+  assert.equal(
+    loadStatus(pastDue, [payment({ amount_minor: 110000 })], today),
+    "paid"
+  );
+  // Due today is NOT overdue.
+  const dueToday = load({ due_on: "2026-10-28" });
+  assert.equal(loadStatus(dueToday, [], today), "unpaid");
+  assert.equal(
+    loadStatus(dueToday, [payment({ amount_minor: 50000 })], today),
+    "partial"
+  );
+  // No due date at all: old three-state behaviour is preserved.
+  assert.equal(loadStatus(load(), [], today), "unpaid");
+});
+
+test("profitPerMile: normal case, per-currency and per-month filtering", () => {
+  const loads = [
+    load({ delivery_date: "2026-10-05", distance_miles: 1000 }),
+    load({
+      id: "load-2",
+      delivery_date: "2026-10-20",
+      distance_miles: 250,
+      gross_minor: 50000,
+      surcharge_minor: 0,
+      accessorial_minor: 0,
+      deductions_minor: 0,
+    }),
+    load({ id: "load-3", delivery_date: "2026-11-01", distance_miles: 999 }),
+    load({
+      id: "load-4",
+      delivery_date: "2026-10-10",
+      currency: "USD",
+      distance_miles: 500,
+    }),
+  ];
+  const expenses = [
+    { expense_date: "2026-10-03", amountMinor: 20000, currency: "CAD" },
+    { expense_date: "2026-11-03", amountMinor: 99900, currency: "CAD" },
+  ];
+  const r = profitPerMile("2026-10", expenses, loads, "CAD");
+  assert.equal(r.miles, 1250);
+  // Revenue: 110000 + 50000 = 160000 minor = $1600 -> $1.28/mile.
+  assert.equal(r.revenuePerMile, 1600 / 1250);
+  assert.equal(r.costPerMile, 200 / 1250);
+  assert.equal(r.profitPerMile, 1400 / 1250);
+  const usd = profitPerMile("2026-10", expenses, loads, "USD");
+  assert.equal(usd.miles, 500);
+  const empty = profitPerMile("2026-12", expenses, loads, "CAD");
+  assert.equal(empty.miles, 0);
+  assert.equal(empty.revenuePerMile, null);
+  assert.equal(empty.costPerMile, null);
+  assert.equal(empty.profitPerMile, null);
+});
+
+test("profitPerMile: loads without miles yield nulls, not zeros", () => {
+  const r = profitPerMile("2026-10", [], [load()], "CAD");
+  assert.equal(r.miles, 0);
+  assert.equal(r.profitPerMile, null);
 });

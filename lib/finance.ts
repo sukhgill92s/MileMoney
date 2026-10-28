@@ -27,6 +27,11 @@ export interface LoadRow {
   deductions_minor: number;
   notes: string | null;
   created_at: string;
+  /** Trip miles (v1.4, migration 0009). Optional: rows written before
+   * 0009, and loads saved without miles, carry null. */
+  distance_miles?: number | null;
+  /** Payment due date (v1.4, migration 0009). Optional, same reason. */
+  due_on?: string | null;
 }
 
 export interface LoadPaymentRow {
@@ -93,15 +98,27 @@ export function outstandingFor(load: LoadRow, payments: LoadPaymentRow[]): numbe
   return Math.max(0, netLoad(load) - paidFor(load.id, payments));
 }
 
-export type LoadStatus = "paid" | "partial" | "unpaid";
+export type LoadStatus = "paid" | "partial" | "unpaid" | "overdue";
 
+/**
+ * Status pill rule (v1.4, ported from the v1.6 design): fully settled
+ * (outstanding <= 0) is Paid — Paid always wins, even past the due
+ * date. Otherwise a due date in the past makes the load Overdue; a
+ * part-payment without a passed due date is Partially paid; the rest
+ * is Unpaid. A due date of today is NOT overdue (only strictly past
+ * dates count). `today` defaults to the current date and is a
+ * parameter so tests can pin it.
+ */
 export function loadStatus(
   load: LoadRow,
-  payments: LoadPaymentRow[]
+  payments: LoadPaymentRow[],
+  today: string = new Date().toISOString().slice(0, 10)
 ): LoadStatus {
   const paid = paidFor(load.id, payments);
-  if (paid <= 0) return "unpaid";
-  return paid >= netLoad(load) ? "paid" : "partial";
+  if (outstandingFor(load, payments) <= 0) return "paid";
+  if (load.due_on && load.due_on < today) return "overdue";
+  if (paid > 0) return "partial";
+  return "unpaid";
 }
 
 /**
@@ -193,4 +210,51 @@ export function money(
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+export interface PerMile {
+  currency: Currency;
+  /** Total trip miles of loads delivered in the month. */
+  miles: number;
+  /** Dollars per mile; null when the month has no miles. */
+  revenuePerMile: number | null;
+  costPerMile: number | null;
+  profitPerMile: number | null;
+}
+
+/**
+ * Per-mile operating estimate (v1.4, ported from the v1.6 formula,
+ * adapted to the live schema). Delivery basis only: loads delivered in
+ * the month for the currency, revenue = their net, cost = expenses
+ * incurred in the month for the currency. NOTE: the live app has NO
+ * business/personal flag on expenses, so ALL expenses count as cost —
+ * the same assumption monthSummary already makes. This is a simplified
+ * aggregate estimate, not a per-load allocation. All three rates are
+ * null when miles is 0 (no division by zero, no misleading $0.00).
+ */
+export function profitPerMile(
+  month: string,
+  expenses: ExpenseLike[],
+  loads: LoadRow[],
+  currency: Currency
+): PerMile {
+  const selected = loads.filter(
+    (l) =>
+      asCurrency(l.currency) === currency && monthOf(l.delivery_date) === month
+  );
+  const miles = selected.reduce((s, l) => s + (l.distance_miles ?? 0), 0);
+  const revenue = selected.reduce((s, l) => s + netLoad(l), 0);
+  const cost = expenses
+    .filter(
+      (e) =>
+        asCurrency(e.currency) === currency && monthOf(e.expense_date) === month
+    )
+    .reduce((s, e) => s + e.amountMinor, 0);
+  return {
+    currency,
+    miles,
+    revenuePerMile: miles ? revenue / 100 / miles : null,
+    costPerMile: miles ? cost / 100 / miles : null,
+    profitPerMile: miles ? (revenue - cost) / 100 / miles : null,
+  };
 }
