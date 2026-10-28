@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabaseClient";
 import Shell from "@/components/Shell";
 import { useLocale } from "@/lib/locale";
-import { cad, prettyDate } from "@/lib/week";
+import { cad } from "@/lib/week";
 import {
   asCurrency,
   money,
@@ -20,7 +20,6 @@ import {
   CATEGORIES,
   categoryLabelKey,
   monthKey,
-  monthLabel,
   monthRange,
   shiftMonth,
   type PersonalExpense,
@@ -45,7 +44,6 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState("");
-  const [receiptBusy, setReceiptBusy] = useState<string | null>(null);
 
   const load = useCallback(async (m: string) => {
     setLoading(true);
@@ -170,25 +168,11 @@ export default function DashboardPage() {
     }
   }
 
-  async function viewReceipt(path: string) {
-    setReceiptBusy(path);
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.storage
-        .from("receipts")
-        .createSignedUrl(path, 120);
-      if (error) throw error;
-      if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener");
-    } catch {
-      setError(t.receiptError);
-    } finally {
-      setReceiptBusy(null);
-    }
-  }
-
   return (
     <Shell>
       <div className="container">
+        {/* ONE compact month selector: prev/next arrows + the month
+          picker. No duplicate month text label anywhere on this page. */}
         <div className="exp-monthnav card">
           <button
             type="button"
@@ -208,7 +192,6 @@ export default function DashboardPage() {
               }}
               aria-label={t.selectMonth}
             />
-            <div className="exp-month-label">{monthLabel(month, locale)}</div>
           </div>
           <button
             type="button"
@@ -222,9 +205,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="card exp-hero">
-          <div className="muted">
-            {monthLabel(month, locale)} — {t.monthTotal}
-          </div>
           <div className="exp-total">{cad(cadTotal, locale)}</div>
           {hasUsdExpenses && (
             <div className="exp-total" style={{ fontSize: 20 }}>
@@ -239,41 +219,9 @@ export default function DashboardPage() {
 
         {error && <div className="error-box">{error}</div>}
 
-        {(["CAD", "USD"] as Currency[])
-          .filter((cur) => cur === "CAD" || hasUsdExpenses)
-          .map((cur) => {
-            const cats = byCategory(cur);
-            const curTotal = cats.reduce((s, c) => s + c.sum, 0);
-            return (
-              <div key={cur}>
-                <h2 className="exp-section-title">
-                  {t.categorySummary}
-                  {hasUsdExpenses ? ` (${cur})` : ""}
-                </h2>
-                <div className="exp-cat-grid">
-                  {cats.map((c) => (
-                    <div key={c.value} className="card exp-cat-card">
-                      <div className="exp-cat-top">
-                        <span aria-hidden="true">
-                          {CATEGORY_ICONS[c.value] ?? "📦"}
-                        </span>
-                        <span>{c.label}</span>
-                      </div>
-                      <div className="exp-cat-amount">
-                        {money(toMinor(c.sum), cur, locale)}
-                      </div>
-                      <div className="muted">
-                        {curTotal > 0
-                          ? `${c.pct.toFixed(0)}${t.ofTotal}`
-                          : "—"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
+        {/* Profit FIRST, above Category Summary (v1.3). Per-currency
+          cards with Income, Expenses, Profit, Outstanding; the
+          delivery/cash toggle switches the income method. */}
         <h2 className="exp-section-title">{t.profitHeading}</h2>
         <div className="btn-row" style={{ marginBottom: 16 }}>
           <button
@@ -325,12 +273,55 @@ export default function DashboardPage() {
         </div>
         <p className="muted">{t.profitNote}</p>
 
+        {/* Category Summary as a compact list: one row per category
+          with label, amount and a thin teal progress bar for share
+          of the currency total (reuses the existing pct value). */}
+        {(["CAD", "USD"] as Currency[])
+          .filter((cur) => cur === "CAD" || hasUsdExpenses)
+          .map((cur) => {
+            const cats = byCategory(cur);
+            return (
+              <div key={cur}>
+                <h2 className="exp-section-title">
+                  {t.categorySummary}
+                  {hasUsdExpenses ? ` (${cur})` : ""}
+                </h2>
+                <div className="exp-cat-list">
+                  {cats.map((c) => (
+                    <div key={c.value} className="card exp-cat-row">
+                      <div className="exp-cat-row-top">
+                        <span aria-hidden="true">
+                          {CATEGORY_ICONS[c.value] ?? "📦"}
+                        </span>
+                        <span className="exp-cat-row-label">{c.label}</span>
+                        <span className="exp-cat-row-amount">
+                          {money(toMinor(c.sum), cur, locale)}
+                        </span>
+                      </div>
+                      <div className="exp-cat-bar">
+                        <div
+                          className="exp-cat-bar-fill"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, c.pct))}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
         <div className="btn-row exp-actions">
           <Link href="/expenses/new" className="btn">
             ＋ {t.addExpense}
           </Link>
           <Link href="/expenses/new?scan=1" className="btn-secondary">
             {t.scanReceipt}
+          </Link>
+          <Link href="/income" className="btn-secondary">
+            ＋ {t.income}
           </Link>
           <button
             type="button"
@@ -346,52 +337,9 @@ export default function DashboardPage() {
           <p className="muted">{t.noExpensesMonth}</p>
         )}
 
-        <h2 className="exp-section-title">
-          {t.expensesHeading} — {monthLabel(month, locale)}
-        </h2>
-        {loading ? (
-          <div className="card">
-            <p className="muted">{t.loading}</p>
-          </div>
-        ) : (
-          <div className="exp-list">
-            {expenses.map((e) => (
-              <div key={e.id} className="card exp-row">
-                <div className="exp-row-icon" aria-hidden="true">
-                  {CATEGORY_ICONS[e.category] ?? "📦"}
-                </div>
-                <div className="exp-row-main">
-                  <div className="exp-row-title">
-                    {t[categoryLabelKey(e.category)]}
-                  </div>
-                  <div className="muted">
-                    {prettyDate(e.expense_date, locale)}
-                    {e.note ? ` · ${e.note}` : ""}
-                  </div>
-                  {e.receipt_path && (
-                    <button
-                      type="button"
-                      className="exp-receipt-link"
-                      onClick={() => viewReceipt(e.receipt_path as string)}
-                      disabled={receiptBusy === e.receipt_path}
-                    >
-                      {receiptBusy === e.receipt_path
-                        ? t.opening
-                        : t.viewReceipt}
-                    </button>
-                  )}
-                </div>
-                <div className="exp-row-amount">
-                  {money(
-                    toMinor(Number(e.amount_cad)),
-                    asCurrency(e.currency),
-                    locale
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* The expense list moved to /expenses in v1.3 (with search,
+          filters, Edit, Delete and View Receipt) — it no longer lives
+          on the dashboard. */}
       </div>
     </Shell>
   );
