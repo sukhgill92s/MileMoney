@@ -318,12 +318,6 @@ input:focus, select:focus {
 
 .exp-month-center input[type="month"] { width: auto; }
 
-.exp-month-label {
-  font-family: Manrope, sans-serif;
-  font-weight: 800;
-  margin-top: 6px;
-}
-
 .exp-hero { margin-bottom: 24px; }
 
 .exp-total {
@@ -340,28 +334,40 @@ input:focus, select:focus {
   margin: 28px 0 16px;
 }
 
-.exp-cat-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
-}
+/* Category Summary as a compact list (v1.3): one row per category with
+ * label, amount and a thin teal progress bar for share of total. */
+.exp-cat-list { display: grid; gap: 10px; }
 
-.exp-cat-card { padding: 20px; }
+.exp-cat-row { padding: 16px 20px; }
 
-.exp-cat-top {
+.exp-cat-row-top {
   display: flex;
-  gap: 8px;
   align-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--muted);
+  gap: 8px;
+  font-size: 14px;
 }
 
-.exp-cat-amount {
+.exp-cat-row-label { font-weight: 700; flex: 1; }
+
+.exp-cat-row-amount {
   font-family: Manrope, sans-serif;
   font-weight: 800;
-  font-size: 20px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.exp-cat-bar {
+  height: 6px;
+  background: var(--line);
+  border-radius: 3px;
+  overflow: hidden;
   margin-top: 10px;
+}
+
+.exp-cat-bar-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 3px;
 }
 
 .exp-actions { margin: 24px 0; }
@@ -403,6 +409,78 @@ input:focus, select:focus {
   padding: 4px 0;
   cursor: pointer;
 }
+
+.exp-row-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.exp-row-btn:hover { filter: brightness(.99); border-color: var(--teal); }
+
+/* ---------- Expenses history: chips, action sheet, dialog (v1.3) ---------- */
+
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+
+.chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 20px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chip.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0f243966;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  z-index: 20;
+}
+
+.sheet { width: 100%; max-width: 520px; }
+
+.sheet-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+
+.sheet-actions .btn-danger-solid { margin-left: auto; }
+
+.btn-danger-solid {
+  border: 0;
+  background: #ae3939;
+  color: #fff;
+  border-radius: 11px;
+  padding: 12px 19px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-decoration: none;
+}
+
+.btn-danger-solid:disabled { opacity: .5; cursor: not-allowed; }
+
+.check-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 12px 0;
+}
+
+.check-row input { width: auto; margin-top: 2px; accent-color: var(--teal); }
 
 .exp-photo-preview img, .scan-receipt-preview img {
   max-width: 100%;
@@ -604,7 +682,6 @@ input:focus, select:focus {
 
 @media (max-width: 1180px) {
   .formgrid { grid-template-columns: repeat(2, 1fr); }
-  .exp-cat-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 760px) {
@@ -618,7 +695,6 @@ input:focus, select:focus {
   .content .container { padding: 0 0 115px; }
   .formgrid { grid-template-columns: 1fr; }
   .profit-grid { grid-template-columns: 1fr; }
-  .exp-cat-grid { grid-template-columns: repeat(2, 1fr); }
   .loadstats { grid-template-columns: 1fr; }
   .card, .auth-card { padding: 20px; }
   .exp-landing { margin: 20px auto; padding: 24px; }
