@@ -3,12 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabaseClient";
-import { useLang } from "@/lib/i18n";
-import { LanguageToggle } from "@/components/Header";
+import { useLocale, LangToggle } from "@/lib/locale";
 import AuthHero from "@/components/AuthHero";
 
 export default function SignupPage() {
-  const { t } = useLang();
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -40,7 +39,7 @@ export default function SignupPage() {
       }
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("errorGeneric"));
+      setError(e instanceof Error ? e.message : t.errorGeneric);
     } finally {
       setLoading(false);
     }
@@ -51,18 +50,18 @@ export default function SignupPage() {
       <AuthHero />
       <div className="auth-form-wrap">
         <div className="auth-topbar">
-          <LanguageToggle />
+          <LangToggle />
         </div>
         <div className="card auth-card">
-          <h1>{t("createAccount")}</h1>
-          <p className="muted">{t("signupSub")}</p>
+          <h1>{t.createAccount}</h1>
+          <p className="muted">{t.signupSub}</p>
           {done ? (
-            <div className="success-box">{t("checkEmail")}</div>
+            <div className="success-box">{t.checkEmail}</div>
           ) : (
             <form onSubmit={handleSubmit}>
               {error && <div className="error-box">{error}</div>}
               <div className="field">
-                <label htmlFor="email">{t("email")}</label>
+                <label htmlFor="email">{t.email}</label>
                 <input
                   id="email"
                   type="email"
@@ -73,7 +72,7 @@ export default function SignupPage() {
                 />
               </div>
               <div className="field">
-                <label htmlFor="password">{t("password")}</label>
+                <label htmlFor="password">{t.password}</label>
                 <input
                   id="password"
                   type="password"
@@ -85,12 +84,12 @@ export default function SignupPage() {
                 />
               </div>
               <button type="submit" className="btn" disabled={loading}>
-                {loading ? t("creating") : t("createAccountBtn")}
+                {loading ? t.creating : t.createAccountBtn}
               </button>
             </form>
           )}
           <div className="auth-links">
-            {t("haveAccount")} <Link href="/login">{t("signIn")}</Link>
+            {t.haveAccount} <Link href="/login">{t.signIn}</Link>
           </div>
         </div>
       </div>
