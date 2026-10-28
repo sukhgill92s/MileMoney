@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabaseClient";
-import AppHeader from "@/components/AppHeader";
+import Shell from "@/components/Shell";
 import { useLocale } from "@/lib/locale";
 import { toISODate } from "@/lib/week";
 import { CATEGORIES, categoryLabelKey } from "@/lib/expenses";
@@ -19,6 +19,7 @@ interface ScanReview {
   amount: string;
   date: string;
   category: string;
+  currency: string;
 }
 
 function NewExpenseForm() {
@@ -31,6 +32,7 @@ function NewExpenseForm() {
   const [date, setDate] = useState(toISODate(new Date()));
   const [category, setCategory] = useState<string>("diesel");
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("CAD");
   const [note, setNote] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -101,6 +103,7 @@ function NewExpenseForm() {
           amount: found.amount !== null ? found.amount.toFixed(2) : "",
           date: found.date ?? toISODate(new Date()),
           category: found.category ?? category,
+          currency,
         });
         setScanNote(t.scannedCheck);
       } finally {
@@ -117,6 +120,7 @@ function NewExpenseForm() {
     date: string;
     category: string;
     amount: string;
+    currency: string;
     note: string;
   }) {
     setError("");
@@ -152,6 +156,7 @@ function NewExpenseForm() {
         expense_date: values.date,
         category: values.category,
         amount_cad: amountNum,
+        currency: values.currency,
         note: values.note.trim() || null,
         receipt_path: receiptPath,
       });
@@ -167,7 +172,7 @@ function NewExpenseForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await saveExpense({ date, category, amount, note });
+    await saveExpense({ date, category, amount, currency, note });
   }
 
   /** Confirm & Save from the review screen: the detected vendor becomes
@@ -181,204 +186,230 @@ function NewExpenseForm() {
       date: review.date,
       category: review.category,
       amount: review.amount,
+      currency: review.currency,
       note: parts.join(" — "),
     });
   }
 
   return (
-    <main className="container">
-      <AppHeader />
-      <div className="card">
-        <h1>{review ? t.scanResultTitle : t.addExpenseTitle}</h1>
-        {scanRequested && !review && <p className="muted">{t.scanHint}</p>}
-        {saved ? (
-          <div className="success-box">{t.expenseSaved}</div>
-        ) : review ? (
-          <div>
-            {error && <div className="error-box">{error}</div>}
-            {photoPreview && (
-              <div className="scan-receipt-preview">
-                <p className="muted">{t.scannedReceipt}</p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photoPreview} alt={t.scannedReceipt} />
-              </div>
-            )}
-            <div className="scan-detected">
-              <p className="scan-detected-head">
-                <span>✨ {t.aiDetected}</span>{" "}
-                <span className="ai-chip">{t.aiAutoFilled}</span>
-              </p>
-              <p className="muted">{t.aiFilledNote}</p>
-            </div>
-            <div className="field">
-              <label htmlFor="rvendor">{t.vendor}</label>
-              <input
-                id="rvendor"
-                type="text"
-                value={review.vendor}
-                onChange={(e) =>
-                  setReview({ ...review, vendor: e.target.value })
-                }
-                placeholder={t.vendorPlaceholder}
-                maxLength={120}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="ramount">{t.amount}</label>
-              <input
-                id="ramount"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0.01"
-                required
-                value={review.amount}
-                onChange={(e) =>
-                  setReview({ ...review, amount: e.target.value })
-                }
-                placeholder="0.00"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="rdate">{t.date}</label>
-              <input
-                id="rdate"
-                type="date"
-                required
-                value={review.date}
-                max={toISODate(new Date())}
-                onChange={(e) =>
-                  setReview({ ...review, date: e.target.value })
-                }
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="rcat">{t.category}</label>
-              <select
-                id="rcat"
-                value={review.category}
-                onChange={(e) =>
-                  setReview({ ...review, category: e.target.value })
-                }
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {t[categoryLabelKey(c.value)]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="btn-row">
-              <button
-                type="button"
-                className="btn"
-                onClick={handleConfirmSave}
-                disabled={saving}
-              >
-                {saving ? t.saving : t.confirmSave}
-              </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={handleRetake}
-                disabled={saving}
-              >
-                {t.retakePhoto}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            {error && <div className="error-box">{error}</div>}
-            <div className="field">
-              <label htmlFor="edate">{t.date}</label>
-              <input
-                id="edate"
-                type="date"
-                required
-                value={date}
-                max={toISODate(new Date())}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="ecat">{t.category}</label>
-              <select
-                id="ecat"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {t[categoryLabelKey(c.value)]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="eamount">{t.amount}</label>
-              <input
-                id="eamount"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0.01"
-                required
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="enote">{t.note}</label>
-              <input
-                id="enote"
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder={t.notePlaceholder}
-                maxLength={120}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="ephoto">{t.receiptPhoto}</label>
-              <input
-                ref={fileRef}
-                id="ephoto"
-                type="file"
-                accept="image/*"
-                onChange={(e) => onPhotoChange(e.target.files?.[0] ?? null)}
-              />
+    <Shell active={scanRequested ? "scan" : "expense"}>
+      <div className="container">
+        <div className="card">
+          <h1>{review ? t.scanResultTitle : t.addExpenseTitle}</h1>
+          {scanRequested && !review && <p className="muted">{t.scanHint}</p>}
+          {saved ? (
+            <div className="success-box">{t.expenseSaved}</div>
+          ) : review ? (
+            <div>
+              {error && <div className="error-box">{error}</div>}
               {photoPreview && (
-                <div className="exp-photo-preview">
+                <div className="scan-receipt-preview">
+                  <p className="muted">{t.scannedReceipt}</p>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoPreview} alt={t.receiptPhoto} />
+                  <img src={photoPreview} alt={t.scannedReceipt} />
                 </div>
               )}
+              <div className="scan-detected">
+                <p className="scan-detected-head">
+                  <span>✨ {t.aiDetected}</span>{" "}
+                  <span className="ai-chip">{t.aiAutoFilled}</span>
+                </p>
+                <p className="muted">{t.aiFilledNote}</p>
+              </div>
+              <div className="field">
+                <label htmlFor="rvendor">{t.vendor}</label>
+                <input
+                  id="rvendor"
+                  type="text"
+                  value={review.vendor}
+                  onChange={(e) =>
+                    setReview({ ...review, vendor: e.target.value })
+                  }
+                  placeholder={t.vendorPlaceholder}
+                  maxLength={120}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="ramount">{t.amount}</label>
+                <input
+                  id="ramount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  value={review.amount}
+                  onChange={(e) =>
+                    setReview({ ...review, amount: e.target.value })
+                  }
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="rcurrency">{t.currency}</label>
+                <select
+                  id="rcurrency"
+                  value={review.currency}
+                  onChange={(e) =>
+                    setReview({ ...review, currency: e.target.value })
+                  }
+                >
+                  <option value="CAD">CAD</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="rdate">{t.date}</label>
+                <input
+                  id="rdate"
+                  type="date"
+                  required
+                  value={review.date}
+                  max={toISODate(new Date())}
+                  onChange={(e) =>
+                    setReview({ ...review, date: e.target.value })
+                  }
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="rcat">{t.category}</label>
+                <select
+                  id="rcat"
+                  value={review.category}
+                  onChange={(e) =>
+                    setReview({ ...review, category: e.target.value })
+                  }
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {t[categoryLabelKey(c.value)]}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="btn-row">
                 <button
                   type="button"
-                  className="btn-secondary"
-                  onClick={handleScan}
-                  disabled={!photo || scanning}
+                  className="btn"
+                  onClick={handleConfirmSave}
+                  disabled={saving}
                 >
-                  {scanning ? t.scanning : t.scanReceipt}
+                  {saving ? t.saving : t.confirmSave}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleRetake}
+                  disabled={saving}
+                >
+                  {t.retakePhoto}
                 </button>
               </div>
-              {scanNote && <p className="muted">{scanNote}</p>}
             </div>
-            <div className="btn-row">
-              <button type="submit" className="btn" disabled={saving}>
-                {saving ? t.saving : t.saveExpense}
-              </button>
-              <Link href="/dashboard" className="btn-secondary">
-                {t.cancel}
-              </Link>
-            </div>
-          </form>
-        )}
+          ) : (
+            <form onSubmit={handleSubmit}>
+              {error && <div className="error-box">{error}</div>}
+              <div className="field">
+                <label htmlFor="edate">{t.date}</label>
+                <input
+                  id="edate"
+                  type="date"
+                  required
+                  value={date}
+                  max={toISODate(new Date())}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="ecat">{t.category}</label>
+                <select
+                  id="ecat"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  {CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {t[categoryLabelKey(c.value)]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="eamount">{t.amount}</label>
+                <input
+                  id="eamount"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="ecurrency">{t.currency}</label>
+                <select
+                  id="ecurrency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                >
+                  <option value="CAD">CAD</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="enote">{t.note}</label>
+                <input
+                  id="enote"
+                  type="text"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder={t.notePlaceholder}
+                  maxLength={120}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="ephoto">{t.receiptPhoto}</label>
+                <input
+                  ref={fileRef}
+                  id="ephoto"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => onPhotoChange(e.target.files?.[0] ?? null)}
+                />
+                {photoPreview && (
+                  <div className="exp-photo-preview">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoPreview} alt={t.receiptPhoto} />
+                  </div>
+                )}
+                <div className="btn-row">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleScan}
+                    disabled={!photo || scanning}
+                  >
+                    {scanning ? t.scanning : t.scanReceipt}
+                  </button>
+                </div>
+                {scanNote && <p className="muted">{scanNote}</p>}
+              </div>
+              <div className="btn-row">
+                <button type="submit" className="btn" disabled={saving}>
+                  {saving ? t.saving : t.saveExpense}
+                </button>
+                <Link href="/dashboard" className="btn-secondary">
+                  {t.cancel}
+                </Link>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
-    </main>
+    </Shell>
   );
 }
 
