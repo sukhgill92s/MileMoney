@@ -3,8 +3,9 @@
 import { useLocale } from "@/lib/locale";
 
 /**
- * Night-highway hero panel for the public auth pages.
- * Dark navy + amber — MileMoney's own identity, distinct from Driver Day Tracker.
+ * Brand block for the public auth pages, in the app's design language:
+ * teal-gradient mark + MileMoney + tagline + feature list, on the dark
+ * gradient auth screen. Copy stays in EN | FR via the strings file.
  */
 export default function AuthHero() {
   const { t } = useLocale();
@@ -17,7 +18,13 @@ export default function AuthHero() {
     <div className="auth-hero">
       <div className="auth-hero-inner">
         <div className="auth-brand">
-          🚛 Mile<span>Money</span>
+          <span className="brandmark">
+            M<span>·</span>
+          </span>
+          <span>
+            <strong>MileMoney</strong>
+            <small>DRIVE YOUR NUMBERS</small>
+          </span>
         </div>
         <p className="auth-tagline">{t.heroTagline}</p>
         <ul className="auth-features">
@@ -31,9 +38,6 @@ export default function AuthHero() {
             </li>
           ))}
         </ul>
-      </div>
-      <div className="auth-road">
-        <div className="auth-road-line" />
       </div>
     </div>
   );
