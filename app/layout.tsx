@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { LanguageProvider } from "@/lib/i18n";
+import { LocaleProvider } from "@/lib/locale";
 
 export const metadata: Metadata = {
-  title: "FleetDesk",
+  title: "MileMoney — Driver Expense Tracker",
   description:
-    "Simple fleet management for small trucking companies — trips, expenses, driver pay.",
+    "Daily expense tracker for drivers and owner-operators: receipt scan, category totals, monthly PDF.",
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
       <body>
-        <LanguageProvider>{children}</LanguageProvider>
+        <LocaleProvider>{children}</LocaleProvider>
       </body>
     </html>
   );

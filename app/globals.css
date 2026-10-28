@@ -1,4 +1,4 @@
-/* FleetDesk — clean, mobile-first styles. No CSS framework. */
+/* MileMoney — clean, mobile-first styles. No CSS framework. */
 
 :root {
   --bg: #f5f3ec;
@@ -161,7 +161,7 @@ body::before {
   height: 20px;
 }
 
-/* ---------- FleetDesk dashboard (slate/indigo) ---------- */
+/* ---------- MileMoney dashboard (slate/indigo) ---------- */
 
 .fdash {
   max-width: 28rem;
@@ -885,7 +885,7 @@ table.data tfoot td {
 }
 
 /* ------------------------------------------------------------------
-   Dark premium auth — night highway. FleetDesk's own identity.
+   Dark premium auth — night highway. MileMoney's own identity.
    Used by /login, /signup, /onboarding. The in-app screens stay light.
 ------------------------------------------------------------------- */
 .auth-page {
@@ -1178,7 +1178,7 @@ table.data tfoot td {
   text-align: right;
 }
 
-/* ============ FleetDesk landing page (dark, public) ============ */
+/* ============ MileMoney landing page (dark, public) ============ */
 .fleet-landing {
   background: #ffffff;
   color: #0f1f38;
@@ -1417,3 +1417,213 @@ table.data tfoot td {
 }
 .badge-completed { background: rgba(96, 165, 250, .12); color: #60a5fa; border: 1px solid rgba(96, 165, 250, .35); }
 .badge-rejected { background: rgba(239, 68, 68, .12); color: #ef4444; border: 1px solid rgba(239, 68, 68, .35); }
+
+/* ------------------------------------------------------------------ */
+/* Expense tracker pivot (Oct 2026): dark navy + amber dashboard theme */
+/* ------------------------------------------------------------------ */
+
+.app-nav-link {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.app-nav-link.active {
+  background: #1e293b;
+  color: #fbbf24;
+}
+
+.exp-monthnav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exp-month-center {
+  flex: 1;
+  text-align: center;
+}
+
+.exp-month-center input[type="month"] {
+  font-size: 16px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--card);
+  color: var(--text);
+}
+
+.exp-month-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.exp-hero {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+
+.exp-hero .muted {
+  color: #94a3b8;
+}
+
+.exp-total {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 4px 0;
+}
+
+.exp-section-title {
+  font-size: 18px;
+  margin: 24px 0 12px;
+}
+
+.exp-cat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.exp-cat-card {
+  margin-bottom: 0;
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.exp-cat-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+}
+
+.exp-cat-amount {
+  font-size: 22px;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+.exp-actions {
+  margin-top: 16px;
+}
+
+.exp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exp-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 0;
+}
+
+.exp-row-icon {
+  font-size: 24px;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.exp-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.exp-row-title {
+  font-weight: 700;
+}
+
+.exp-row-amount {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.exp-receipt-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.exp-receipt-link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.exp-photo-preview {
+  margin: 12px 0;
+}
+
+.exp-photo-preview img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.exp-landing {
+  margin-top: 32px;
+}
+
+.exp-landing h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.exp-landing-list {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+/* AI scan review screen (free on-device scan): receipt preview + detected
+ * fields, matching the approved mockup. */
+.scan-receipt-preview {
+  margin: 12px 0;
+}
+
+.scan-receipt-preview img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.scan-detected {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fffbeb;
+}
+
+.scan-detected-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.ai-chip {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
