@@ -39,10 +39,9 @@ export async function middleware(request: NextRequest) {
   );
   const isAuthRoute = pathname.startsWith("/auth/");
   // "/" is public (landing page for logged-out visitors).
+  // Single-user expense tracker: no roles, no owner/driver split.
   const isProtected =
-    pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/owner") ||
-    pathname.startsWith("/driver");
+    pathname.startsWith("/dashboard") || pathname.startsWith("/expenses");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
@@ -59,38 +58,5 @@ export async function middleware(request: NextRequest) {
   // Let /auth/* (callback, signout) through untouched.
   if (isAuthRoute) return supabaseResponse;
 
-  // Role guard: owners belong on /owner/*, drivers on /driver/*.
-  // Server-side redirect, so a wrong-role visit settles in one hop
-  // and can never ping-pong like a client-side check could.
-  if (user) {
-    const wantsOwner = pathname.startsWith("/owner");
-    const wantsDriver = pathname.startsWith("/driver");
-    if (wantsOwner || wantsDriver) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      // Only redirect on a definite role mismatch. If the profile read comes
-      // back empty for a moment, leave the user where they are instead of
-      // bouncing them somewhere wrong.
-      const url = request.nextUrl.clone();
-      if (profile && wantsOwner && profile.role !== "owner") {
-        url.pathname = "/driver";
-        return NextResponse.redirect(url);
-      }
-      if (profile && wantsDriver && profile.role !== "driver") {
-        url.pathname = "/owner";
-        return NextResponse.redirect(url);
-      }
-    }
-  }
-
   return supabaseResponse;
 }
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};
