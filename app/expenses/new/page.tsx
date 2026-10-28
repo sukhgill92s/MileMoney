@@ -192,7 +192,7 @@ function NewExpenseForm() {
   }
 
   return (
-    <Shell active={scanRequested ? "scan" : "expense"}>
+    <Shell active={scanRequested ? "scan" : "expenses"}>
       <div className="container">
         <div className="card">
           <h1>{review ? t.scanResultTitle : t.addExpenseTitle}</h1>
