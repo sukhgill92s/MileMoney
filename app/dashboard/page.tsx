@@ -10,6 +10,7 @@ import {
   asCurrency,
   money,
   monthSummary,
+  profitPerMile,
   toMinor,
   type Currency,
   type LoadPaymentRow,
@@ -140,6 +141,24 @@ export default function DashboardPage() {
       s.spending !== 0 ||
       s.outstanding !== 0
   );
+  // Per-mile estimates (v1.4): delivery basis always — loads delivered
+  // in the month, all expenses in the month — independent of the
+  // delivery/cash toggle above, which only drives the profit cards.
+  // A card renders only when the currency has miles > 0 this month.
+  const perMile = (["CAD", "USD"] as Currency[])
+    .map((cur) =>
+      profitPerMile(
+        month,
+        expenses.map((e) => ({
+          expense_date: e.expense_date,
+          amountMinor: toMinor(Number(e.amount_cad)),
+          currency: expenseCurrency(e),
+        })),
+        loads,
+        cur
+      )
+    )
+    .filter((p) => p.miles > 0);
 
   async function downloadPdf() {
     setPdfBusy(true);
@@ -272,6 +291,47 @@ export default function DashboardPage() {
           ))}
         </div>
         <p className="muted">{t.profitNote}</p>
+
+        {/* Profit per mile (v1.4): one card per currency with miles this
+          month. Hidden entirely when no miles were recorded. */}
+        {perMile.map((p) => (
+          <div key={p.currency} className="card profit-card">
+            <h2 className="exp-section-title" style={{ marginTop: 0 }}>
+              {t.perMileHeading} · {p.currency}
+            </h2>
+            <div className="profit-row">
+              <span>{t.milesThisMonth}</span>
+              <b>
+                {p.miles.toLocaleString(locale)} {t.milesUnit}
+              </b>
+            </div>
+            <div className="profit-row">
+              <span>{t.revenuePerMile}</span>
+              <b>
+                {p.revenuePerMile !== null
+                  ? money(p.revenuePerMile * 100, p.currency, locale)
+                  : "—"}
+              </b>
+            </div>
+            <div className="profit-row">
+              <span>{t.costPerMile}</span>
+              <b>
+                {p.costPerMile !== null
+                  ? money(p.costPerMile * 100, p.currency, locale)
+                  : "—"}
+              </b>
+            </div>
+            <div className="profit-row">
+              <span>{t.profitPerMile}</span>
+              <b>
+                {p.profitPerMile !== null
+                  ? money(p.profitPerMile * 100, p.currency, locale)
+                  : "—"}
+              </b>
+            </div>
+          </div>
+        ))}
+        {perMile.length > 0 && <p className="muted">{t.perMileNote}</p>}
 
         {/* Category Summary as a compact list: one row per category
           with label, amount and a thin teal progress bar for share
