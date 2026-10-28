@@ -41,7 +41,9 @@ export async function middleware(request: NextRequest) {
   // "/" is public (landing page for logged-out visitors).
   // Single-user expense tracker: no roles, no owner/driver split.
   const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/expenses");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/expenses") ||
+    pathname.startsWith("/income");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
