@@ -14,14 +14,24 @@ import {
   monthRange,
   type PersonalExpense,
 } from "@/lib/expenses";
-import { cad, prettyDate } from "@/lib/week";
+import {
+  asCurrency,
+  money,
+  monthSummary,
+  toMinor,
+  type Currency,
+  type LoadPaymentRow,
+  type LoadRow,
+} from "@/lib/finance";
+import { prettyDate } from "@/lib/week";
 
 /**
  * GET /api/monthly-pdf?month=YYYY-MM&lang=en|fr
  * Signed-in users only. Streams a PDF of their own personal expenses for
  * the month, rendered in the requested language (default English): a
- * category-wise breakdown (each category separate) followed by the month's
- * expense list.
+ * per-currency category-wise breakdown, the month's expense list, and a
+ * per-currency operating-profit section (delivery-date income method).
+ * Currencies are never summed together.
  */
 export async function GET(request: Request) {
   try {
@@ -54,6 +64,19 @@ export async function GET(request: Request) {
     if (error) throw error;
     const expenses = (data ?? []) as PersonalExpense[];
 
+    // Loads + payments for the profit section. Missing tables (before
+    // migration 0008) just mean no income data yet.
+    const { data: lData, error: lErr } = await supabase
+      .from("loads")
+      .select("*")
+      .eq("user_id", user.id);
+    const loads = (lErr ? [] : (lData ?? [])) as LoadRow[];
+    const { data: pData, error: pErr } = await supabase
+      .from("load_payments")
+      .select("*")
+      .eq("user_id", user.id);
+    const payments = (pErr ? [] : (pData ?? [])) as LoadPaymentRow[];
+
     const doc = new PDFDocument({ margin: 48, size: "letter" });
     const chunks: Buffer[] = [];
     doc.on("data", (c: Buffer) => chunks.push(c));
@@ -65,20 +88,35 @@ export async function GET(request: Request) {
     doc.fontSize(13).text(monthLabel(month, locale));
     doc.moveDown();
 
-    const total = expenses.reduce((s, e) => s + Number(e.amount_cad), 0);
-    doc.fontSize(14).text(t.pdfBreakdown);
-    doc.moveDown(0.5);
-    for (const c of CATEGORIES) {
-      const rows = expenses.filter((e) => e.category === c.value);
-      const sum = rows.reduce((s, e) => s + Number(e.amount_cad), 0);
-      const countWord = rows.length === 1 ? t.expenseOne : t.expenseMany;
+    const expenseCurrency = (e: PersonalExpense) => asCurrency(e.currency);
+    const currenciesPresent = (["CAD", "USD"] as Currency[]).filter(
+      (cur) => expenses.some((e) => expenseCurrency(e) === cur)
+    );
+    const breakdownCurrencies =
+      currenciesPresent.length > 0 ? currenciesPresent : (["CAD"] as Currency[]);
+
+    for (const cur of breakdownCurrencies) {
+      const rows = expenses.filter((e) => expenseCurrency(e) === cur);
+      const total = rows.reduce((s, e) => s + Number(e.amount_cad), 0);
+      doc.fontSize(14).text(`${t.pdfBreakdown} (${cur})`);
+      doc.moveDown(0.5);
+      for (const c of CATEGORIES) {
+        const catRows = rows.filter((e) => e.category === c.value);
+        const sum = catRows.reduce((s, e) => s + Number(e.amount_cad), 0);
+        const countWord =
+          catRows.length === 1 ? t.expenseOne : t.expenseMany;
+        doc
+          .fontSize(12)
+          .text(
+            `${t[categoryLabelKey(c.value)]}: ${money(toMinor(sum), cur, locale)} (${catRows.length} ${countWord})`
+          );
+      }
+      doc.moveDown(0.5);
       doc
-        .fontSize(12)
-        .text(`${t[categoryLabelKey(c.value)]}: ${cad(sum, locale)} (${rows.length} ${countWord})`);
+        .fontSize(13)
+        .text(`${t.pdfMonthTotal}${money(toMinor(total), cur, locale)}`);
+      doc.moveDown();
     }
-    doc.moveDown(0.5);
-    doc.fontSize(13).text(`${t.pdfMonthTotal}${cad(total, locale)}`);
-    doc.moveDown();
 
     doc.fontSize(14).text(t.pdfExpenses);
     doc.moveDown(0.5);
@@ -91,12 +129,42 @@ export async function GET(request: Request) {
         doc
           .fontSize(12)
           .text(
-            `${prettyDate(e.expense_date, locale)} · ${label}${note}: ${cad(
-              Number(e.amount_cad),
+            `${prettyDate(e.expense_date, locale)} · ${label}${note}: ${money(
+              toMinor(Number(e.amount_cad)),
+              expenseCurrency(e),
               locale
             )}`
           );
       }
+    }
+    doc.moveDown();
+
+    // Operating profit, delivery-date method, per currency.
+    const summaries = monthSummary(
+      month,
+      expenses.map((e) => ({
+        expense_date: e.expense_date,
+        amountMinor: toMinor(Number(e.amount_cad)),
+        currency: expenseCurrency(e),
+      })),
+      loads,
+      payments,
+      "delivery"
+    );
+    doc.fontSize(14).text(t.profitHeading);
+    doc.moveDown(0.5);
+    for (const s of summaries) {
+      if (
+        s.currency !== "CAD" &&
+        s.income === 0 &&
+        s.spending === 0 &&
+        s.outstanding === 0
+      ) {
+        continue;
+      }
+      doc.fontSize(12).text(
+        `${s.currency} — ${t.income}: ${money(s.income, s.currency, locale)} · ${t.expensesHeading}: ${money(s.spending, s.currency, locale)} · ${t.profitLabel}: ${money(s.profit, s.currency, locale)} · ${t.pdfOutstanding}: ${money(s.outstanding, s.currency, locale)}`
+      );
     }
     doc.moveDown();
     doc.fontSize(10).text(t.pdfGenerated);
