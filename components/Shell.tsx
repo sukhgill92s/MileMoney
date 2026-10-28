@@ -6,15 +6,18 @@ import { createClient } from "@/lib/supabaseClient";
 import { useLocale, LangToggle } from "@/lib/locale";
 
 /**
- * App shell for the signed-in pages (dashboard, add expense, income):
- * fixed dark sidebar on desktop (brand block + WORKSPACE nav + language
- * toggle + logout at the bottom), white topbar, fixed bottom nav on
- * mobile. Nav links point only at routes this app actually has —
- * Dashboard, Add Expense, Scan (the expense scan flow) and Income.
- * There is no separate Reports route: the monthly PDF lives on the
- * dashboard, so no Reports entry is invented here.
+ * App shell for the signed-in pages: fixed dark sidebar on desktop (brand
+ * block + WORKSPACE nav + language toggle + logout at the bottom), white
+ * topbar, fixed bottom nav on mobile. Nav is exactly five tabs, in order:
+ * Dashboard, Expenses (history list), Scan (the expense scan flow),
+ * Income, Reports (monthly PDF + CSV downloads).
  */
-export type ShellActive = "dashboard" | "expense" | "scan" | "income";
+export type ShellActive =
+  | "dashboard"
+  | "expenses"
+  | "scan"
+  | "income"
+  | "reports";
 
 export default function Shell({
   children,
@@ -31,9 +34,13 @@ export default function Shell({
     active ??
     (pathname === "/income"
       ? "income"
-      : pathname.startsWith("/expenses")
-        ? "expense"
-        : "dashboard");
+      : pathname === "/reports"
+        ? "reports"
+        : pathname === "/expenses"
+          ? "expenses"
+          : pathname.startsWith("/expenses")
+            ? "expenses"
+            : "dashboard");
 
   async function signOut() {
     const supabase = createClient();
@@ -44,9 +51,10 @@ export default function Shell({
 
   const links: { key: ShellActive; href: string; label: string; icon: string }[] = [
     { key: "dashboard", href: "/dashboard", label: t.dashboard, icon: "🏠" },
-    { key: "expense", href: "/expenses/new", label: t.addExpense, icon: "＋" },
+    { key: "expenses", href: "/expenses", label: t.expensesHeading, icon: "📋" },
     { key: "scan", href: "/expenses/new?scan=1", label: t.scanReceipt, icon: "📷" },
     { key: "income", href: "/income", label: t.income, icon: "💰" },
+    { key: "reports", href: "/reports", label: t.reports, icon: "📊" },
   ];
 
   return (
