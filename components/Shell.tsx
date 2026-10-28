@@ -17,7 +17,8 @@ export type ShellActive =
   | "expenses"
   | "scan"
   | "income"
-  | "reports";
+  | "reports"
+  | "none";
 
 export default function Shell({
   children,
@@ -36,11 +37,13 @@ export default function Shell({
       ? "income"
       : pathname === "/reports"
         ? "reports"
-        : pathname === "/expenses"
-          ? "expenses"
-          : pathname.startsWith("/expenses")
+        : pathname === "/accountant"
+          ? "none"
+          : pathname === "/expenses"
             ? "expenses"
-            : "dashboard");
+            : pathname.startsWith("/expenses")
+              ? "expenses"
+              : "dashboard");
 
   async function signOut() {
     const supabase = createClient();
@@ -82,6 +85,17 @@ export default function Shell({
             </Link>
           ))}
         </nav>
+        {/* Accountant access (v1.4) lives outside the five bottom tabs:
+          sidebar link on desktop, topbar link on mobile. */}
+        <nav>
+          <Link
+            href="/accountant"
+            className={resolved === "none" ? "active" : ""}
+          >
+            <span aria-hidden="true">🧾</span>
+            {t.accountant}
+          </Link>
+        </nav>
         <div className="sidebarbottom">
           <LangToggle />
           <button type="button" onClick={signOut}>
@@ -96,6 +110,9 @@ export default function Shell({
             MileMoney
           </Link>
           <span className="topright">
+            <Link href="/accountant" className="toplink">
+              {t.accountant}
+            </Link>
             <span className="secure">● {t.secureWorkspace}</span>
             <LangToggle />
           </span>
