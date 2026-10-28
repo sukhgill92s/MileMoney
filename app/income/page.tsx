@@ -18,15 +18,16 @@ import {
   type LoadRow,
 } from "@/lib/finance";
 
-/** Income page (v1.1): loads with status pills, net / received /
- * outstanding per load, add-load form, record-payment form with
- * overpayment rejection, delete-load (payments cascade in the DB).
- * No paid APIs anywhere on this page. */
+/** Income page (v1.1, v1.4 adds miles + due date): loads with status
+ * pills, net / received / outstanding per load, add-load form,
+ * record-payment form with overpayment rejection, delete-load
+ * (payments cascade in the DB). No paid APIs anywhere on this page. */
 
 const PILL_CLASS: Record<string, string> = {
   paid: "pill pill-paid",
   partial: "pill pill-partial",
   unpaid: "pill pill-unpaid",
+  overdue: "pill pill-overdue",
 };
 
 function isMissingTable(error: { code?: string; message?: string } | null) {
@@ -59,6 +60,9 @@ export default function IncomePage() {
   const [accessorials, setAccessorials] = useState("");
   const [deductions, setDeductions] = useState("");
   const [notes, setNotes] = useState("");
+  // v1.4: optional trip miles + payment due date (migration 0009).
+  const [miles, setMiles] = useState("");
+  const [dueOn, setDueOn] = useState("");
 
   // Record-payment form state (one open form at a time).
   const [payDate, setPayDate] = useState(toISODate(new Date()));
@@ -111,6 +115,7 @@ export default function IncomePage() {
     const surNum = parseFloat(surcharge || "0");
     const accNum = parseFloat(accessorials || "0");
     const dedNum = parseFloat(deductions || "0");
+    const milesNum = miles.trim() === "" ? null : parseFloat(miles);
     if (
       !reference.trim() ||
       !counterparty.trim() ||
@@ -122,7 +127,8 @@ export default function IncomePage() {
       isNaN(accNum) ||
       accNum < 0 ||
       isNaN(dedNum) ||
-      dedNum < 0
+      dedNum < 0 ||
+      (milesNum !== null && (isNaN(milesNum) || milesNum < 0))
     ) {
       setError(t.invalidLoad);
       return;
@@ -145,6 +151,8 @@ export default function IncomePage() {
         surcharge_minor: toMinor(surNum),
         accessorial_minor: toMinor(accNum),
         deductions_minor: toMinor(dedNum),
+        distance_miles: milesNum,
+        due_on: dueOn || null,
         notes: notes.trim() || null,
       });
       if (insErr) throw insErr;
@@ -156,6 +164,8 @@ export default function IncomePage() {
       setSurcharge("");
       setAccessorials("");
       setDeductions("");
+      setMiles("");
+      setDueOn("");
       setNotes("");
       setShowForm(false);
       setNotice(t.loadSaved);
@@ -349,6 +359,26 @@ export default function IncomePage() {
                   placeholder="0.00"
                 />
               </label>
+              <label>
+                {t.tripMiles}
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  min="0"
+                  value={miles}
+                  onChange={(e) => setMiles(e.target.value)}
+                  placeholder="1250"
+                />
+              </label>
+              <label>
+                {t.paymentDue}
+                <input
+                  type="date"
+                  value={dueOn}
+                  onChange={(e) => setDueOn(e.target.value)}
+                />
+              </label>
               <label className="full">
                 {t.note}
                 <input
@@ -388,9 +418,12 @@ export default function IncomePage() {
             const statusLabel =
               status === "paid"
                 ? t.statusPaid
-                : status === "partial"
-                  ? t.statusPartial
-                  : t.statusUnpaid;
+                : status === "overdue"
+                  ? t.statusOverdue
+                  : status === "partial"
+                    ? t.statusPartial
+                    : t.statusUnpaid;
+            const milesNum = l.distance_miles ?? null;
             return (
               <div key={l.id} className="loadcard">
                 <div
@@ -410,6 +443,13 @@ export default function IncomePage() {
                   </div>
                   <span className={PILL_CLASS[status]}>{statusLabel}</span>
                 </div>
+                {milesNum !== null && milesNum > 0 && (
+                  <p className="muted" style={{ margin: "5px 0" }}>
+                    {milesNum.toLocaleString(locale)} {t.milesUnit} ·{" "}
+                    {money(netLoad(l) / milesNum, cur, locale)}
+                    {t.perMile}
+                  </p>
+                )}
                 <div className="loadstats">
                   <span>
                     {t.netAmount}
