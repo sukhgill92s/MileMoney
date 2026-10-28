@@ -18,6 +18,8 @@ export interface PersonalExpense {
   expense_date: string; // YYYY-MM-DD
   category: string;
   amount_cad: number;
+  /** Currency of the amount. Rows written before v1.1 have none and read as CAD. */
+  currency?: string | null;
   note: string | null;
   receipt_path: string | null;
   created_at: string;
