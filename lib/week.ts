@@ -41,19 +41,21 @@ function weekLabel(monday: Date, sunday: Date): string {
   return `${fmt(monday)} – ${fmt(sunday)}`;
 }
 
-/** "2026-09-27" -> "Sep 27, 2026". */
-export function prettyDate(iso: string): string {
+/** "2026-09-27" -> "Sep 27, 2026" (or "27 sept. 2026" for fr-CA). */
+export function prettyDate(iso: string, locale = "en-CA"): string {
   const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-CA", {
+  return new Date(y, m - 1, d).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 }
 
-export function cad(n: number): string {
-  return `$${n.toLocaleString("en-CA", {
+export function cad(n: number, locale = "en-CA"): string {
+  return n.toLocaleString(locale, {
+    style: "currency",
+    currency: "CAD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`;
+  });
 }
