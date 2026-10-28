@@ -4,14 +4,13 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabaseClient";
-import { useLang } from "@/lib/i18n";
-import { LanguageToggle } from "@/components/Header";
+import { useLocale, LangToggle } from "@/lib/locale";
 import AuthHero from "@/components/AuthHero";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLang();
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
@@ -35,7 +34,7 @@ function LoginForm() {
       router.push("/");
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : t("errorGeneric"));
+      setError(e instanceof Error ? e.message : t.errorGeneric);
     } finally {
       setLoading(false);
     }
@@ -46,15 +45,15 @@ function LoginForm() {
       <AuthHero />
       <div className="auth-form-wrap">
         <div className="auth-topbar">
-          <LanguageToggle />
+          <LangToggle />
         </div>
         <div className="card auth-card">
-          <h1>{t("welcomeBack")}</h1>
-          <p className="muted">{t("signInSub")}</p>
+          <h1>{t.welcomeBack}</h1>
+          <p className="muted">{t.signInSub}</p>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-box">{error}</div>}
             <div className="field">
-              <label htmlFor="email">{t("email")}</label>
+              <label htmlFor="email">{t.email}</label>
               <input
                 id="email"
                 type="email"
@@ -65,7 +64,7 @@ function LoginForm() {
               />
             </div>
             <div className="field">
-              <label htmlFor="password">{t("password")}</label>
+              <label htmlFor="password">{t.password}</label>
               <input
                 id="password"
                 type="password"
@@ -76,12 +75,12 @@ function LoginForm() {
               />
             </div>
             <button type="submit" className="btn" disabled={loading}>
-              {loading ? t("signingIn") : t("signIn")}
+              {loading ? t.signingIn : t.signIn}
             </button>
           </form>
           <div className="auth-links">
-            {t("noAccount")}{" "}
-            <Link href="/signup">{t("createOne")}</Link>
+            {t.noAccount}{" "}
+            <Link href="/signup">{t.createOne}</Link>
           </div>
         </div>
       </div>
